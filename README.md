@@ -1,95 +1,46 @@
+# 📊 Análisis y Modelado de Series Temporales
 
-<div style="text-align: center;">
-  <img src="https://github.com/Hack-io-Data/Imagenes/blob/main/01-LogosHackio/logo_naranja@4x.png?raw=true" alt="esquema" />
-</div>
- 
- 
-# Laboratorio: Análisis y Modelado de Series Temporales con SARIMAX
+## 📖 Descripción
 
-En este laboratorio, practicarás el análisis y modelado de series temporales utilizando el modelo SARIMAX. 
-Objetivos del laboratorio
+Este proyecto está diseñado para practicar el análisis y modelado de series temporales utilizando el modelo SARIMAX. Se enfoca en identificar patrones como tendencias y estacionalidad, verificar la estacionaridad de las series, y construir modelos predictivos para ayudar en la toma de decisiones estratégicas basadas en datos históricos.
 
-- Analizar series temporales:
-	
-    - Identificar tendencias, estacionalidad y posibles rupturas estructurales en los datos.
-	
-    - Verificar la estacionaridad de la serie mediante pruebas estadísticas y visuales.
-	
-    - Realizar análisis de autocorrelación (ACF) y autocorrelación parcial (PACF).
+El análisis se lleva a cabo sobre una serie temporal relacionada con ventas mensuales de una empresa ficticia, abarcando un periodo de cinco años.
 
-- Modelar la serie temporal:
-	
-    - Ajustar un modelo SARIMAX adecuado para los datos proporcionados.
-	
-    - Evaluar los resultados del modelo e interpretar los parámetros obtenidos.
+## 🗂️ Estructura del Proyecto
 
-- Interpretar gráficas y resultados:
-	
-    - Explicar de forma detallada el significado de las gráficas y resultados generados durante cada etapa del análisis.
+```plaintext
+├── data/                # Datos crudos y procesados
+├── notebooks/           # Notebooks de Jupyter con el análisis
+├── src/                 # Scripts de procesamiento y modelado
+├── results/             # Gráficos y archivos de resultados
+├── README.md            # Descripción del proyecto
+```
 
-# Instrucciones
+## 🛠️ Instalación y Requisitos
 
-- Parte 1: Carga y exploración inicial de los datos
+Este proyecto utiliza Python 3.8 y requiere las siguientes bibliotecas:
 
-    - Descarga el conjunto de datos proporcionado, que contiene una serie temporal de valores relacionados con ventas mensuales de una empresa ficticia durante los últimos 5 años.
+- [pandas](https://pandas.pydata.org/)
+- [numpy](https://numpy.org/)
+- [matplotlib](https://matplotlib.org/)
+- [seaborn](https://seaborn.pydata.org/)
+- [statsmodels](https://www.statsmodels.org/)
+- [scipy](https://scipy.org/)
 
-    - Realiza una exploración inicial:
+Recomendamos usar un entorno virtual para instalar las dependencias.
 
-        - Gráfica la serie temporal completa para identificar posibles tendencias y estacionalidades.
+## 📊 Resultados y Conclusiones
 
-        - Comenta tus observaciones iniciales sobre los patrones que encuentres.
+- **Estacionaridad**: Aplicamos transformaciones y pruebas estadísticas para lograr series estacionarias, como el test de Dickey-Fuller aumentado.
+- **Modelado**: Ajustamos un modelo SARIMAX que captura tanto componentes estacionales como no estacionales.
+- **Predicción**: Las predicciones de los próximos 12 meses fueron consistentes con las tendencias históricas observadas, logrando una buena calidad predictiva.
+- **Insights**:
+  - Las ventas presentan un claro patrón estacional anual.
+  - El modelo es útil para prever periodos de alta demanda, mejorando la planificación estratégica.
 
-- Parte 2: Estacionaridad
+## 🔄 Próximos Pasos
 
-
-    - Evalúa si la serie es estacionaria:
-
-    - Aplica el test de Dickey-Fuller aumentado (ADF).
-
-    - Si es necesario, realiza transformaciones (diferenciación o logaritmos) para convertir la serie en estacionaria.
-
-    - Genera una gráfica comparativa que muestre la serie original y la transformada, indicando las diferencias visuales.
-
-    - Escribe una interpretación de los resultados del test ADF y de la gráfica.
-
-- Parte 3: Análisis de autocorrelaciones
-
-
-    - Genera los gráficos de ACF (Autocorrelation Function) y PACF (Partial Autocorrelation Function).
-
-    - Identifica:
-
-        - El orden de diferenciación necesario (si aún no lo has hecho).
-
-        - Los posibles valores para los parámetros p y q del modelo SARIMAX.
-
-    - Explica qué indican las autocorrelaciones encontradas y cómo las utilizarás para definir los parámetros del modelo.
-
-- Parte 4: Ajuste del modelo SARIMAX
-
-
-    - Ajusta un modelo SARIMAX utilizando los parámetros identificados.
-
-    - Evalúa el ajuste:
-
-        - Observa los residuos del modelo.
-
-        - Verifica si cumplen las condiciones de ruido blanco mediante análisis visual y pruebas estadísticas.
-
-    - Ajusta el modelo si es necesario, iterando sobre los parámetros.
-
-- Parte 5: Interpretación y predicción
-
-
-    - Interpreta los coeficientes estimados del modelo (incluyendo estacionalidad y efectos externos si aplican).
-
-    - Genera una predicción para los próximos 12 meses.
-
-    - Gráfica las predicciones junto con la serie temporal original.
-
-    - Comenta sobre:
-
-        - La calidad de las predicciones.
-
-        - La utilidad del modelo para la toma de decisiones.
+- Explorar el uso de datos externos (e.g., clima, campañas de marketing) para mejorar el modelo.
+- Implementar un pipeline de automatización para actualizar el modelo con nuevos datos.
+- Probar otros enfoques avanzados como modelos basados en redes neuronales.
 
