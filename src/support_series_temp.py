@@ -21,11 +21,370 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import mean_squared_error
 from itertools import product
-
+from itertools import product
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
 
 # Otros
 # -----------------------------------------------------------------------
 from tqdm import tqdm
+
+
+
+def exploracion_grafica(dataframe,columna_variable):
+    decomposition = seasonal_decompose(dataframe[columna_variable], model='additive', period=12)
+    # Crear figura y subplots
+    fig, axes = plt.subplots(4, 1, figsize= (20, 15), sharex=True)
+
+    # Serie original
+    axes[0].plot(dataframe[columna_variable], color="blue", linewidth=2)
+    axes[0].set_title("Serie Original", fontsize=14)
+    axes[0].grid(visible=True, linestyle="--", alpha=0.6)
+
+    # Tendencia
+    axes[1].plot(decomposition.trend, color="orange", linewidth=2)
+    axes[1].set_title("Tendencia", fontsize=14)
+    axes[1].grid(visible=True, linestyle="--", alpha=0.6)
+
+    # Estacionalidad
+    axes[2].plot(decomposition.seasonal, color="green", linewidth=2)
+    axes[2].set_title("Estacionalidad", fontsize=14)
+    axes[2].grid(visible=True, linestyle="--", alpha=0.6)
+
+    # Ruido
+    axes[3].plot(decomposition.resid, color="red", linewidth=2)
+    axes[3].set_title("Ruido (Residuo)", fontsize=14)
+    axes[3].grid(visible=True, linestyle="--", alpha=0.6)
+
+    # Ajustar diseño
+    plt.suptitle("Descomposición de la Serie Temporal", fontsize=16, y=0.95)
+    plt.xlabel("Fecha", fontsize=12)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.show()
+
+def exploracion_datos(data,columna,frecuencia=None):
+    """
+    Exploración completa de una serie temporal.
+    
+    Args:
+        df (pd.DataFrame): DataFrame con los datos.
+        columna (str): Nombre de la columna de la serie temporal.
+        frecuencia (int): Frecuencia para la descomposición (por ejemplo, 12 para datos mensuales).
+    
+    Returns:
+        dict: Resultados del análisis con claves de Tendencia, Estacionalidad, Residuo y prueba ADF.
+    """
+    resultados = {}
+    
+    # 1. Información básica
+    print("Resumen estadístico:")
+    display(data[columna].describe())
+    print("\nPrimeros datos:")
+    display(data.head())
+    print("\nÚltimos datos:")
+    display(data.tail())
+    
+    # 2. Gráfico de la serie temporal
+    plt.figure(figsize=(10, 6))
+    data[columna].plot(title=f"Serie Temporal - {columna}")
+    plt.xlabel('Fecha')
+    plt.ylabel('Valor')
+    plt.grid()
+    plt.show()
+    
+    # 3. Histogramas y distribución
+    plt.figure(figsize=(10, 6))
+    data[columna].hist(bins=30, alpha=0.7)
+    plt.title("Distribución de la Serie Temporal")
+    plt.xlabel("Valor")
+    plt.ylabel("Frecuencia")
+    plt.grid()
+    plt.show()
+    
+    return resultados
+
+def calcular_lags_recomendados(data):
+    """
+    Calcula dos opciones recomendadas de lags para gráficos ACF y PACF.
+    
+    Parámetros:
+        data (pd.Series o array-like): Serie temporal o datos.
+        
+    Retorno:
+        dict: Un diccionario con dos opciones:
+              - "sqrt": Número de lags basado en la raíz cuadrada del tamaño de la muestra.
+              - "n4": Número de lags basado en un cuarto del tamaño de la muestra.
+    """
+    N = len(data)  # Número de observaciones
+    
+    # Opción 1: Raíz cuadrada del tamaño de la muestra
+    lags_sqrt = int(np.sqrt(N))
+    
+    # Opción 2: Un cuarto del tamaño de la muestra
+    lags_n4 = int(N / 4)
+    
+    return {
+        "sqrt": lags_sqrt,
+        "n4": lags_n4
+    }
+
+def graficar_autocorrelacion(data, lags=40):
+    """
+    Genera un gráfico de la función de autocorrelación (ACF).
+    
+    Parámetros:
+        data (pd.Series o array-like): Serie temporal o datos para calcular la autocorrelación.
+        lags (int): Número de retardos (lags) a incluir en el gráfico.
+        titulo (str): Título del gráfico.
+    """
+    plt.figure(figsize=(10, 6))
+    plot_acf(data, lags=lags)
+    plt.title("Función de Autocorrelación (ACF)")
+    plt.xlabel("*lags* (Lags)")
+    plt.ylabel("Correlación")
+    plt.grid()
+    plt.show()
+
+def graficar_autocorrelacion_parcial(data, lags=24):
+    """
+    Genera un gráfico de la función de autocorrelación parcial (PACF).
+    
+    Parámetros:
+        data (pd.Series o array-like): Serie temporal o datos para calcular la autocorrelación parcial.
+        lags (int): Número de retardos (lags) a incluir en el gráfico.
+        metodo (str): Método para calcular el PACF ('ywm', 'ols', etc.).
+        titulo (str): Título del gráfico.
+    """
+    plt.figure(figsize=(10, 6))
+    plot_pacf(data, lags=lags, method="ywm")
+    plt.title("Función de Autocorrelación Parcial (PACF)")
+    plt.xlabel("*lags* (Lags)")
+    plt.ylabel("Correlación Parcial")
+    plt.grid()
+    plt.show()
+
+def aplicar_adf_test(serie, alpha=0.05):
+    """
+    Aplica el test de Dickey-Fuller aumentado (ADF) a una serie temporal.
+    
+    Parámetros:
+        serie (pd.Series): Serie temporal sobre la que se aplica el test.
+        alpha (float): Nivel de significancia para interpretar los resultados. Por defecto, 0.05.
+        
+    Retorna:
+        dict: Un diccionario con los resultados principales del test:
+              - Estadístico del test
+              - Valor p (p-value)
+              - Lags utilizados
+              - Número de observaciones
+              - Valor crítico para diferentes niveles
+              - Resultado de estacionariedad
+    """
+    # Aplicar el test ADF
+    resultado = adfuller(serie, autolag='AIC')
+    estadistico, p_valor, lags, n_obs, valores_criticos, _ = resultado
+    
+    # Interpretación del resultado
+    estacionariedad = p_valor < alpha
+    
+    # Imprimir resultados principales
+    print("Resultados del Test de Dickey-Fuller Aumentado (ADF):")
+    print(f"Estadístico del Test: {estadistico:.4f}")
+    print(f"Valor p: {p_valor:.4f}")
+    print(f"Número de Lags: {lags}")
+    print(f"Número de Observaciones: {n_obs}")
+    print("Valores Críticos:")
+    for nivel, valor_critico in valores_criticos.items():
+        print(f"  {nivel}: {valor_critico:.4f}")
+    print(f"\n¿Es la serie estacionaria? {'Sí' if estacionariedad else 'No'} (Nivel de significancia: {alpha})")
+    
+    # Retornar resultados como diccionario
+    return {
+        "Estadístico del Test": estadistico,
+        "Valor p": p_valor,
+        "Lags Utilizados": lags,
+        "Número de Observaciones": n_obs,
+        "Valores Críticos": valores_criticos,
+        "Estacionariedad": estacionariedad}
+
+def graficar_acf_pacf(serie, lags=30):
+    """
+    Genera los gráficos de ACF (Autocorrelation Function) y PACF (Partial Autocorrelation Function).
+    
+    Parámetros:
+        serie (pd.Series o array-like): Serie temporal sobre la que se generan los gráficos.
+        lags (int): Número de retardos (lags) a incluir en los gráficos.
+    """
+    # Crear figura
+    plt.figure(figsize=(12, 6))
+    
+    # Gráfico ACF
+    plt.subplot(1, 2, 1)
+    plot_acf(serie, lags=lags, ax=plt.gca())
+    plt.title("Gráfico ACF")
+    plt.xlabel("Lags")
+    plt.ylabel("Correlación")
+    
+    # Gráfico PACF
+    plt.subplot(1, 2, 2)
+    plot_pacf(serie, lags=lags, method="ywm", ax=plt.gca())
+    plt.title("Gráfico PACF")
+    plt.xlabel("Lags")
+    plt.ylabel("Correlación Parcial")
+    
+    # Mostrar gráficos
+    plt.tight_layout()
+    plt.show()
+
+def entrenar_sarimax(df, columna, train_ratio=0.8, seasonal_order=(1, 1, 1, 12), max_p=3, max_q=10):
+    """
+    Crea y entrena el modelo SARIMAX con la mejor combinación de parámetros p y q.
+    
+    Parámetros:
+        df (pd.DataFrame): DataFrame que contiene la serie temporal.
+        columna (str): Nombre de la columna de interés.
+        train_ratio (float): Proporción de datos para entrenamiento (el resto para prueba).
+        seasonal_order (tuple): Orden estacional (P, D, Q, s).
+        max_p (int): Máximo valor para p en el modelo.
+        max_q (int): Máximo valor para q en el modelo.
+        
+    Retorna:
+        dict: Contiene el modelo entrenado, los conjuntos de entrenamiento y prueba, 
+              los valores óptimos de p y q, y el RMSE.
+    """
+    ps = range(max_p + 1)
+    qs = range(max_q + 1)
+    combinaciones = list(product(ps, qs))
+    
+    # Dividir los datos en entrenamiento y prueba
+    train_size = int(len(df) * train_ratio)
+    train, test = df[columna][:train_size], df[columna][train_size:]
+    
+    resultados = {"p": [], "q": [], "rmse": []}
+    
+    # Ajustar el modelo para diferentes combinaciones de p y q
+    for p, q in combinaciones:
+        try:
+            modelo_prueba = SARIMAX(train, 
+                                    order=(p, 1, q),  # ARIMA(p, d, q)
+                                    seasonal_order=seasonal_order).fit(disp=False)
+            pred_test = modelo_prueba.predict(start=train_size, end=len(df)-1)
+            rmse_valor = np.sqrt(mean_squared_error(test, pred_test))
+            resultados["p"].append(p)
+            resultados["q"].append(q)
+            resultados["rmse"].append(rmse_valor)
+        except:
+            # Manejo de errores si el modelo no converge
+            continue
+    
+    # Convertir resultados a DataFrame y seleccionar el mejor modelo
+    resultados_df = pd.DataFrame(resultados).sort_values("rmse", ascending=True)
+    mejor_modelo = resultados_df.iloc[0]
+    p_value, q_value = int(mejor_modelo["p"]), int(mejor_modelo["q"])
+    
+    # Ajustar el mejor modelo al conjunto de entrenamiento
+    modelo = SARIMAX(train, 
+                     order=(p_value, 1, q_value),  # ARIMA(p, d, q)
+                     seasonal_order=seasonal_order).fit(disp=False)
+    
+    return {"p": p_value,
+            "q": q_value,
+            "rmse": mejor_modelo["rmse"]}
+
+
+def evaluar_ruido_blanco(modelo, train, test, df, columna):
+    """
+    Evalúa si los residuales del modelo cumplen las condiciones de ruido blanco.
+    
+    Parámetros:
+        modelo: Modelo SARIMAX entrenado.
+        train (pd.Series): Conjunto de entrenamiento.
+        test (pd.Series): Conjunto de prueba.
+        df (pd.DataFrame): DataFrame original para referencias.
+        columna (str): Nombre de la columna de interés.
+    
+    Retorna:
+        dict: Contiene los residuales, el RMSE y las predicciones futuras.
+    """
+    # Predicciones en el conjunto de prueba
+    predicciones = modelo.predict(start=len(train), end=len(train) + len(test) - 1)
+    
+    # Visualización de predicciones vs valores reales
+    plt.figure(figsize=(10, 6))
+    plt.plot(df.index, df[columna], label='Real')
+    plt.plot(df.index[len(train):], predicciones, label='Predicciones', linestyle='--')
+    plt.title('Predicciones SARIMAX sobre los datos de prueba')
+    plt.legend()
+    plt.show()
+    
+    # Evaluación del modelo
+    rmse_error = np.sqrt(mean_squared_error(test, predicciones))
+    print(f'Error cuadrático medio (RMSE): {rmse_error:.4f}')
+    
+    # Analizar residuales
+    residuales = modelo.resid
+    plt.figure(figsize=(10, 6))
+    plt.plot(residuales, label="Residuales")
+    plt.axhline(0, linestyle="--", color="red")
+    plt.title("Residuales del Modelo SARIMAX")
+    plt.legend()
+    plt.show()
+    
+    # Predicciones futuras (12 períodos fuera del rango actual)
+    predicciones_futuras = modelo.predict(start=len(train) + len(test), end=len(train) + len(test) + 11)
+    print("Predicciones futuras:")
+    print(predicciones_futuras)
+    
+    return {"residuales": residuales,
+            "rmse": rmse_error,
+            "predicciones_futuras": predicciones_futuras}
+
+def predecir_futuro(modelo, data, columna, meses=12):
+    """
+    Genera predicciones para un número dado de meses futuros usando un modelo SARIMAX entrenado.
+    
+    Parámetros:
+        modelo: Modelo SARIMAX ya entrenado.
+        data (pd.DataFrame): DataFrame original para referencia.
+        columna (str): Nombre de la columna con los datos originales.
+        meses (int): Número de meses a predecir.
+    
+    Retorna:
+        pd.Series: Predicciones futuras para los próximos meses.
+    """
+    # Predicción para los próximos meses
+    inicio_prediccion = len(data)
+    fin_prediccion = inicio_prediccion + meses - 1
+    predicciones_futuras = modelo.predict(start=inicio_prediccion, end=fin_prediccion)
+    
+    # Crear índice de tiempo para las predicciones futuras
+    indice_futuro = pd.date_range(start=data.index[-1] + pd.offsets.MonthBegin(1), periods=meses, freq='M')
+    predicciones_futuras.index = indice_futuro
+    
+    # Visualizar las predicciones futuras
+    plt.figure(figsize=(10, 6))
+    plt.plot(data.index, data[columna], label='Datos Originales')
+    plt.plot(predicciones_futuras.index, predicciones_futuras, label='Predicciones Futuras', linestyle='--', color='red')
+    plt.title('Predicciones para los Próximos Meses')
+    plt.xlabel('Fecha')
+    plt.ylabel('Valores')
+    plt.legend()
+    plt.grid()
+    plt.show()
+    
+    return display(predicciones_futuras)
+    
+
+
+
+
+
+
+
+
+
+
 
 class TimeSeriesAnalysis:
     def __init__(self, dataframe, temporal_column, value_column):
